@@ -1,54 +1,61 @@
-const expressFramework = require("express");
-const appServer = expressFramework();
+const webServer = require("express");
+const schedulerApp = webServer();
 
-appServer.use(expressFramework.json());
+schedulerApp.use(webServer.json());
 
-const vehicleList = [];
-const servicePlans = [];
+let cars = [];
+let bookings = [];
 
-// Register a new vehicle
-appServer.post("/vehicles", (req, res) => {
+// Home endpoint
+schedulerApp.get("/", (req, res) => {
+  res.status(200).send("Service Scheduler is operational");
+});
+
+// Add a vehicle
+schedulerApp.post("/vehicles", (req, res) => {
   const { ownerName, vehicleNumber, type } = req.body;
 
-  const newVehicle = {
-    id: vehicleList.length + 1,
-    owner: ownerName,
-    number: vehicleNumber,
-    category: type
+  const vehicleData = {
+    id: cars.length + 1,
+    ownerName,
+    vehicleNumber,
+    type
   };
 
-  vehicleList.push(newVehicle);
-  res.status(201).json(newVehicle);
+  cars.push(vehicleData);
+  return res.status(201).json(vehicleData);
 });
 
-// Create a service booking
-appServer.post("/schedule", (req, res) => {
+// Book a service
+schedulerApp.post("/schedule", (req, res) => {
   const { vehicleId, serviceType, date } = req.body;
 
-  const newPlan = {
-    id: servicePlans.length + 1,
-    vehicleRef: vehicleId,
-    service: serviceType,
-    scheduledDate: date
+  const booking = {
+    id: bookings.length + 1,
+    vehicleId: Number(vehicleId),
+    serviceType,
+    date
   };
 
-  servicePlans.push(newPlan);
-  res.status(201).json(newPlan);
+  bookings.push(booking);
+  return res.status(201).json(booking);
 });
 
-// Retrieve schedules for a vehicle
-appServer.get("/schedule/:vehicleId", (req, res) => {
-  const vehicleId = req.params.vehicleId;
+// Fetch bookings by vehicle
+schedulerApp.get("/schedule/:id", (req, res) => {
+  const id = Number(req.params.id);
 
-  const filteredPlans = servicePlans.filter(
-    (item) => item.vehicleRef == vehicleId
-  );
+  const results = bookings.filter((entry) => entry.vehicleId === id);
 
-  res.json(filteredPlans);
+  if (results.length === 0) {
+    return res.status(404).json({ message: "No schedules found" });
+  }
+
+  res.json(results);
 });
 
-const SERVER_PORT = 4000;
+const PORT = 4000;
 
-appServer.listen(SERVER_PORT, () => {
-  console.log(`Scheduler service active on port ${SERVER_PORT}`);
+schedulerApp.listen(PORT, () => {
+  console.log(`Scheduler API is running at http://localhost:${PORT}`);
 });
